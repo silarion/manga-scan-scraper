@@ -3,11 +3,13 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node scrapper.js"
   },
   "dependencies": {
     "body-parser": "~1.0.0",
     "cheerio": "0.17.0",
+    "cli-color": "^1.1.0",
+    "commander": "^2.9.0",
     "common-utils": "0.0.2",
     "cookie-parser": "~1.0.1",
     "cradle": "0.6.7",

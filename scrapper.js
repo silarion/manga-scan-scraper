@@ -7,26 +7,28 @@ var cheerio = require('cheerio');
 var XRegExp = require('xregexp').XRegExp;
 var settings = require('./configuration');
 var moment = require('moment');
-moment.locale('fr')
+moment.locale('fr');
+var program = require('commander');
+var clc = require('cli-color');
 
 var urls = [
-	'http://lel-scan.me/lecture-fairy-tail/490',
-	'http://www.japanread.net/manga/nanatsu-no-taizai/181',
-	'http://www.japanread.net/manga/hunter-x-hunter/359',
-	'http://www.japanread.net/manga/magi-the-labyrinth-of-magic/311',
-	'http://www.japanread.net/manga/claymore/156',
-	'http://www.japanread.net/manga/berserk/344',
-	'http://www.japanread.net/manga/One-punch-man/88.3',
-	'http://www.japanread.net/manga/one-piece/760',
-	'http://www.japanread.net/manga/gto-paradise-lost/1'
+	'http://lelscans.com/scan-fairy-tail/522',
+	//'http://www.japanread.net/manga/nanatsu-no-taizai/181',
+	//'http://www.japanread.net/manga/hunter-x-hunter/359',
+	'http://www.japanread.net/manga/magi-the-labyrinth-of-magic/335',
+	//'http://www.japanread.net/manga/claymore/156',
+	//'http://www.japanread.net/manga/berserk/344',
+	'http://www.japanread.net/manga/One-punch-man/95',
+	//'http://www.japanread.net/manga/one-piece/760',
+	//'http://www.japanread.net/manga/gto-paradise-lost/1'
 ];
 
-urls = [urls[8]];
+urls = [urls[2]];
 
-var regexURL = XRegExp('^(?<scheme> [^:/?]+ ) ://   # aka protocol   \n\
-			  (?<host>   [^/?]+  )       # domain name/IP \n\
-			  (?<path>   [^?]*   ) \\??  # optional path  \n\
-			  (?<query>  .*      )       # optional query', 'x');
+//var mangasFolder = "K:\\Mangas"
+var mangasFolder = "C:\\tmp\\mangas"
+
+var regexURL = XRegExp(settings.regexpurl, 'x');
 
 urls.forEach(function(url)
 {
@@ -59,7 +61,7 @@ function search(url, host) {
     request(url, getRequestSettings(host), function (error, response, html) {
 
         if (error) {
-            console.log('error', url, error);
+            console.log(clc.red('error'), url, error);
         } else {
             // Next, we'll utilize the cheerio library on the returned html which will essentially give us jQuery functionality
 
@@ -77,7 +79,7 @@ function search(url, host) {
 				//zip
 				if(!debug && oldDossier){
 					zip.generateNodeStream({type:'nodebuffer',streamFiles:true})
-						.pipe(fs.createWriteStream('K:\\Mangas\\' + manga + '\\Scans ' + manga + '\\' + manga + ' ' + oldDossier + '.cbz'))
+						.pipe(fs.createWriteStream(mangasFolder + '\\' + manga + '\\Scans ' + manga + '\\' + manga + ' ' + oldDossier + '.cbz'))
 						.on('finish', function () {
 							// JSZip generates a readable stream with a "end" event,
 							// but is piped here in a writable stream which emits a "finish" event.
@@ -103,7 +105,7 @@ function search(url, host) {
 				//zip
 				if(!debug){
 					zip.generateNodeStream({type:'nodebuffer',streamFiles:true})
-						.pipe(fs.createWriteStream('K:\\Mangas\\' + manga + '\\Scans ' + manga + '\\' + manga + ' ' + oldDossier + '.cbz'))
+						.pipe(fs.createWriteStream(mangasFolder + '\\' + manga + '\\Scans ' + manga + '\\' + manga + ' ' + oldDossier + '.cbz'))
 						.on('finish', function () {
 							// JSZip generates a readable stream with a "end" event,
 							// but is piped here in a writable stream which emits a "finish" event.
@@ -135,7 +137,7 @@ function search(url, host) {
 			}
 			console.log("Downloading : " + dl);
 			
-			var dir = 'K:\\Mangas\\' + manga + '\\Scans ' + manga + '\\' + dossier;
+			var dir = mangasFolder + '\\' + manga + '\\Scans ' + manga + '\\' + dossier;
 			mkdirp(dir, function(err) { 
 				console.log(err);
 			});
@@ -197,7 +199,7 @@ function getRegex(host, url) {
 function getManga(host, url) {
     var manga = "manga";
 	
-    if(url.indexOf("lecture-fairy-tail") > 0){
+    if(url.indexOf("scan-fairy-tail") > 0){
         manga = "Fairy Tail";
     }
 	
@@ -234,7 +236,7 @@ function getManga(host, url) {
     }
 	
 
-    console.log("Manga : " + manga)
+    console.log(clc.blue("Manga : ") + clc.bgGreen(manga))
     return manga;
 }
 
@@ -242,8 +244,8 @@ function getManga(host, url) {
 function getPageSuivante($, host) {
     var lienPageSuivante = null;
     switch(host){
-        case "lel-scan.me" :
-            lienPageSuivante = $('a[href^="http://lel-scan.me/lecture-fairy-tail/"]:contains("Suiv")');
+        case "lelscans.com" :
+            lienPageSuivante = $('a[href^="http://lelscans.com/scan-fairy-tail/"]:contains("Suiv")');
             break;
 			
 		case "www.japanread.net" :
@@ -264,8 +266,8 @@ function getPageSuivante($, host) {
 function getImage($, host) {
 	var image = null;
     switch(host){
-        case "lel-scan.me" :
-            image = $('div[id="image"] a[href^="http://lel-scan.me/lecture-fairy-tail/"] img').attr('src');
+        case "lelscans.com" :
+            image = $('div[id="image"] a[href^="http://lelscans.com/scan-fairy-tail/"] img').attr('src');
             break;
 			
 		case "www.japanread.net" :
@@ -280,7 +282,7 @@ function getImage($, host) {
 		image = XRegExp.exec(image, regexURL).path;
 		console.log("Image : " + image);
 	}else{
-		console.log("Fin !");
+		console.log("Plus d'image => Fin !");
 	}
     return image;
 }
