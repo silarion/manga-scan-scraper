@@ -12,18 +12,20 @@ var program = require('commander');
 var clc = require('cli-color');
 
 var urls = [
-	'http://lelscans.com/scan-fairy-tail/522',
+	'http://lelscans.com/scan-fairy-tail/522',//http://m.lirescan.net/fairy-tail-lecture-en-ligne/522/
 	//'http://www.japanread.net/manga/nanatsu-no-taizai/181',
 	//'http://www.japanread.net/manga/hunter-x-hunter/359',
 	'http://www.japanread.net/manga/magi-the-labyrinth-of-magic/335',
 	//'http://www.japanread.net/manga/claymore/156',
-	//'http://www.japanread.net/manga/berserk/344',
+	'http://m.lirescan.net/berserk-lecture-en-ligne/345/',
 	'http://www.japanread.net/manga/One-punch-man/95',
-	//'http://www.japanread.net/manga/one-piece/760',
+	'http://m.lirescan.net/one-piece-lecture-en-ligne/760/',
 	//'http://www.japanread.net/manga/gto-paradise-lost/1'
+	'http://m.lirescan.net/detective-conan-lecture-en-ligne/986/',
+	'http://m.lirescan.net/gantz-lecture-en-ligne/372/'
 ];
 
-urls = [urls[2]];
+urls = [urls[3]];
 
 //var mangasFolder = "K:\\Mangas"
 var mangasFolder = "C:\\tmp\\mangas"
@@ -191,6 +193,12 @@ function getRegex(host, url) {
 	
 	//regex = /[^\/]+?\/([\d._-]+?)(?:\/([^\/]+?)|)\/?$/;
 	regex = new RegExp("^.+?/([\\d._-]+)(?:/([\\d._-]+)|)/?$");
+
+	switch(host){
+		case "scanonepiece.com" :
+			regex = new RegExp("chapitre-(\\d+)\/(\\d+)");
+			break;
+	}
 	
     console.log("Regex : " + regex)
     return regex;
@@ -227,7 +235,7 @@ function getManga(host, url) {
         manga = "One Punch Man";
     }
 	
-	if(url.indexOf("one-piece") > 0){
+	if(url.indexOf("one-piece-lecture-en-ligne") > 0){
         manga = "One Piece";
     }
 	
@@ -252,9 +260,14 @@ function getPageSuivante($, host) {
 			var image = getImage($, host);
 			lienPageSuivante = $('img[src="http://' + host + image + '"]').parent();
 			break;
+		case "m.lirescan.net" :
+			var image = getImage($, host);
+			lienPageSuivante = $('#imglink');
+			break;
     }
 
-    lienPageSuivante = lienPageSuivante ? (lienPageSuivante.attr ? lienPageSuivante.attr('href') : lienPageSuivante.href) : null;
+    lienPageSuivante = lienPageSuivante ? (lienPageSuivante.attr ? lienPageSuivante.attr('href') : (lienPageSuivante.href ? lienPageSuivante.href : lienPageSuivante)) : null;
+	
     if(lienPageSuivante && lienPageSuivante.indexOf('http://') < 0){
         lienPageSuivante = 'http://' + host + lienPageSuivante
     }
@@ -271,7 +284,10 @@ function getImage($, host) {
             break;
 			
 		case "www.japanread.net" :
-			image = $('img#img_mng_enl').attr('src');
+			image = $('img#img_mng_enl').attr('src');	
+			break;
+		case "m.lirescan.net" :
+			image = $('#image_scan').attr('src');
 			break;
     }
 	if(image){
@@ -280,7 +296,8 @@ function getImage($, host) {
 		}
 		console.log("Image src : " + image);
 		image = XRegExp.exec(image, regexURL).path;
-		console.log("Image : " + image);
+		image = image.trim()
+		console.log(clc.blue("Image : ") + clc.bgCyan(image));
 	}else{
 		console.log("Plus d'image => Fin !");
 	}
