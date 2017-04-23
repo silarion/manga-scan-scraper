@@ -12,7 +12,7 @@ var program = require('commander');
 var clc = require('cli-color');
 
 var urls = [
-	'http://lelscans.com/scan-fairy-tail/522',//http://m.lirescan.net/fairy-tail-lecture-en-ligne/522/
+	'http://lelscans.net/scan-fairy-tail/522',//http://m.lirescan.net/fairy-tail-lecture-en-ligne/522/
 	//'http://www.japanread.net/manga/nanatsu-no-taizai/181',
 	//'http://www.japanread.net/manga/hunter-x-hunter/359',
 	'http://www.japanread.net/manga/magi-the-labyrinth-of-magic/335',
@@ -25,7 +25,7 @@ var urls = [
 	'http://m.lirescan.net/gantz-lecture-en-ligne/372/'
 ];
 
-urls = [urls[3]];
+urls = [urls[0]];
 
 //var mangasFolder = "K:\\Mangas"
 var mangasFolder = "C:\\tmp\\mangas"
@@ -252,8 +252,9 @@ function getManga(host, url) {
 function getPageSuivante($, host) {
     var lienPageSuivante = null;
     switch(host){
-        case "lelscans.com" :
-            lienPageSuivante = $('a[href^="http://lelscans.com/scan-fairy-tail/"]:contains("Suiv")');
+        case "lelscans.net" :
+		case "lelscans.com" :
+            lienPageSuivante = $('a:contains("Suiv")');
             break;
 			
 		case "www.japanread.net" :
@@ -279,8 +280,9 @@ function getPageSuivante($, host) {
 function getImage($, host) {
 	var image = null;
     switch(host){
-        case "lelscans.com" :
-            image = $('div[id="image"] a[href^="http://lelscans.com/scan-fairy-tail/"] img').attr('src');
+        case "lelscans.net" :
+		case "lelscans.com" :
+            image = $('div[id="image"] a[href^="http://' + host + '"] img').attr('src');
             break;
 			
 		case "www.japanread.net" :
