@@ -22,10 +22,11 @@ var urls = [
 	'http://m.lirescan.net/one-piece-lecture-en-ligne/760/',
 	//'http://www.japanread.net/manga/gto-paradise-lost/1'
 	'http://m.lirescan.net/detective-conan-lecture-en-ligne/986/',
-	'http://m.lirescan.net/gantz-lecture-en-ligne/372/'
+	'http://m.lirescan.net/gantz-lecture-en-ligne/372/',
+	'http://lelscans.co/scan-one-piece/873'
 ];
 
-urls = [urls[0]];
+urls = [urls[7]];
 
 //var mangasFolder = "K:\\Mangas"
 var mangasFolder = "C:\\tmp\\mangas"
@@ -58,6 +59,7 @@ var zip = new JSZip();
 function search(url, host) {
 	console.log("---------------------------------------------------------");
 	console.log('URL : ', url);
+	
 	var manga = getManga(host, url);
 	
     request(url, getRequestSettings(host), function (error, response, html) {
@@ -75,8 +77,11 @@ function search(url, host) {
             
 
             var image = getImage($, host);
+
+			var match = XRegExp.exec(url, getRegex(host, url));
 			
-			if(!image){
+			if(!image || !match){
+				
 				//fin
 				//zip
 				if(!debug && oldDossier){
@@ -94,7 +99,7 @@ function search(url, host) {
 				return;
 			}
 			
-			var match = XRegExp.exec(url, getRegex(host, url));
+			
 			
 			var dossier = match[1];
 			if(dossier.indexOf('.') >= 0)
@@ -141,7 +146,7 @@ function search(url, host) {
 			
 			var dir = mangasFolder + '\\' + manga + '\\Scans ' + manga + '\\' + dossier;
 			mkdirp(dir, function(err) { 
-				console.log(err);
+				console.log("mkdir error : " + err);
 			});
 			
 			var file = dir + '\\' + page + '.' + ext;
@@ -235,7 +240,7 @@ function getManga(host, url) {
         manga = "One Punch Man";
     }
 	
-	if(url.indexOf("one-piece-lecture-en-ligne") > 0){
+	if(url.indexOf("one-piece") > 0){
         manga = "One Piece";
     }
 	
@@ -254,6 +259,7 @@ function getPageSuivante($, host) {
     switch(host){
         case "lelscans.net" :
 		case "lelscans.com" :
+		case "lelscans.co" :
             lienPageSuivante = $('a:contains("Suiv")');
             break;
 			
@@ -282,6 +288,7 @@ function getImage($, host) {
     switch(host){
         case "lelscans.net" :
 		case "lelscans.com" :
+		case "lelscans.co" :
             image = $('div[id="image"] a[href^="http://' + host + '"] img').attr('src');
             break;
 			
