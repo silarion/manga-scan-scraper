@@ -12,7 +12,8 @@ var program = require('commander');
 var clc = require('cli-color');
 
 var urls = [
-	'http://lelscans.net/scan-fairy-tail/522',//http://m.lirescan.net/fairy-tail-lecture-en-ligne/522/
+	'http://lelscanv.com/scan-fairy-tail/532',
+	//http://m.lirescan.net/fairy-tail-lecture-en-ligne/522/
 	//'http://www.japanread.net/manga/nanatsu-no-taizai/181',
 	//'http://www.japanread.net/manga/hunter-x-hunter/359',
 	'http://www.japanread.net/manga/magi-the-labyrinth-of-magic/335',
@@ -23,10 +24,21 @@ var urls = [
 	//'http://www.japanread.net/manga/gto-paradise-lost/1'
 	'http://m.lirescan.net/detective-conan-lecture-en-ligne/986/',
 	'http://m.lirescan.net/gantz-lecture-en-ligne/372/',
-	'http://lelscans.co/scan-one-piece/873'
+	'http://lelscans.co/scan-one-piece/873',
+	'https://scantrad.fr/mangas/one-punch-man/96?page=1',
+	'https://scantrad.fr/mangas/hunter-x-hunter/378?page=1',
+	'http://lelscanv.com/scan-black-clover/174',
+	'http://lelscanv.com/scan-shingeki-no-kyojin/108',
+	//'http://mangapedia.fr/lel/BlackClover/47/93/1',
+	'https://scantrad.fr/mangas/fairytail-100-years-quest/1?page=1',
+	'https://scantrad.fr/mangas/jagaaaaaan/1?page=1',
+	'http://www.scan-manga.com/lecture-en-ligne/Isekai-Mahou-wa-Okureteru-Chapitre-7-FR_74598.html#3886.74598.1822057',
+	'http://lelscanv.com/scan-the-seven-deadly-sins/284',
+	'https://scantrad.fr/mangas/shokuryou-jinrui-starving-anonymous/1?page=1',
+	'https://www.manga-lel.com/manga/the-gamer/1/25'
 ];
 
-urls = [urls[7]];
+urls = [urls[17]];
 
 //var mangasFolder = "K:\\Mangas"
 var mangasFolder = "C:\\tmp\\mangas"
@@ -43,9 +55,11 @@ urls.forEach(function(url)
 
 var download = function(uri, filename, callback){
   request.head(uri, function(err, res, body){
-    console.log('content-type:', res.headers['content-type']);
-    console.log('content-length:', res.headers['content-length']);
-
+	if(res.headers){
+		console.log('content-type:', res.headers['content-type']);
+	    console.log('content-length:', res.headers['content-length']);
+	}
+    
     request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
   });
 };
@@ -74,11 +88,10 @@ function search(url, host) {
                 settings.cheerio
             );
 
-            
+			var match = XRegExp.exec(url, getRegex(host, url));
+			
 
             var image = getImage($, host);
-
-			var match = XRegExp.exec(url, getRegex(host, url));
 			
 			if(!image || !match){
 				
@@ -128,14 +141,24 @@ function search(url, host) {
 			
 			var page = match[2];
 			if(page)
-				page = (Array(3).join('0') + page).slice(-2)
+				page = (Array(3).join('0') + page).slice(-3)
 			else
 				page = '00';
             console.log("Page : " + page);
 			
 			//var ext = match[3];
-			var ext = /\.(\w+)$/.exec(image)[1];
-            console.log("Extension : " + ext);
+			try {
+				var ext = /\.(\w+)$/.exec(image)[1];
+            	console.log("Extension : " + ext);
+			} catch (error) {
+				console.error("Error" + error);
+				var nextPage = getPageSuivante($, host);
+				if(nextPage){
+					search(nextPage, host)
+				}
+				return;
+			}
+			
 			
 			//stockage image
 			var dl = 'http://' + host + image;
@@ -161,7 +184,7 @@ function search(url, host) {
 					  //var zip = new JSZip();
 					  zip.folder(manga + ' ' + dossier).file(page + '.' + ext, data);
 					  
-					  var nextPage = getPageSuivante($, host);
+					  var nextPage = getPageSuivante($, host, match[2], url);
 						if(nextPage){
 							search(nextPage, host)
 						}
@@ -169,7 +192,7 @@ function search(url, host) {
 					
 				});
 			}else{
-				var nextPage = getPageSuivante($, host);
+				var nextPage = getPageSuivante($, host, match[2], url);
 				if(nextPage){
 					search(nextPage, host)
 				}
@@ -203,6 +226,9 @@ function getRegex(host, url) {
 		case "scanonepiece.com" :
 			regex = new RegExp("chapitre-(\\d+)\/(\\d+)");
 			break;
+		case "scantrad.fr" :
+			regex = new RegExp(".*?\/(\\d+)\\?page=(\\d+)");
+			break;
 	}
 	
     console.log("Regex : " + regex)
@@ -214,9 +240,15 @@ function getManga(host, url) {
 	
     if(url.indexOf("scan-fairy-tail") > 0){
         manga = "Fairy Tail";
-    }
+	}
+
+	if(url.indexOf("fairytail-100-years-quest") > 0){
+        manga = "Fairy Tail 100 years quest";
+	}
 	
-	if(url.indexOf("nanatsu-no-taizai") > 0){
+	if(url.indexOf("nanatsu-no-taizai") > 0
+		|| url.indexOf("seven-deadly-sins") > 0
+	){
         manga = "Seven Deadly Sins";
     }
 	
@@ -236,7 +268,8 @@ function getManga(host, url) {
         manga = "Berserk";
     }
 	
-	if(url.indexOf("One-punch-man") > 0){
+	if(url.indexOf("One-punch-man") > 0
+		|| url.indexOf("one-punch-man") > 0){
         manga = "One Punch Man";
     }
 	
@@ -246,7 +279,37 @@ function getManga(host, url) {
 	
 	if(url.indexOf("gto-paradise-lost") > 0){
         manga = "GTO Paradise Lost";
+	}
+	
+	if(url.indexOf("detective-conan") > 0){
+        manga = "Detective Conan";
     }
+	
+	if(url.indexOf("gantz") > 0){
+        manga = "Gantz";
+	}
+	
+	if(url.indexOf("black-clover") > 0
+		|| url.indexOf("BlackClover") > 0){
+        manga = "Black Clover";
+	}
+
+	if(url.indexOf("jagaaaaaan") > 0){
+        manga = "Jagaaaaaan";
+	}
+
+	if(url.indexOf("shingeki-no-kyojin") > 0){
+        manga = "Attaque des Titans";
+	}
+
+	if(url.indexOf("shokuryou-jinrui") > 0){
+        manga = "Starving Anonymous";
+	}
+
+	if(url.indexOf("the-gamer") > 0){
+        manga = "The Gamer";
+	}
+	
 	
 
     console.log(clc.blue("Manga : ") + clc.bgGreen(manga))
@@ -254,28 +317,63 @@ function getManga(host, url) {
 }
 
 /*cherche la page suivante de la recherche - sinon null*/
-function getPageSuivante($, host) {
+function getPageSuivante($, host, page, url, chapter) {
     var lienPageSuivante = null;
     switch(host){
         case "lelscans.net" :
 		case "lelscans.com" :
+		case "lelscanv.com" :
 		case "lelscans.co" :
             lienPageSuivante = $('a:contains("Suiv")');
             break;
 			
 		case "www.japanread.net" :
-			var image = getImage($, host);
+			//var image = getImage($, host);
 			lienPageSuivante = $('img[src="http://' + host + image + '"]').parent();
 			break;
 		case "m.lirescan.net" :
-			var image = getImage($, host);
+			//var image = getImage($, host);
 			lienPageSuivante = $('#imglink');
+			break;
+		case "scantrad.fr" :
+			//var image = getImage($, host);
+			lienPageSuivante = $('#content > div.row.image > a');
+			break;
+		case "mangapedia.fr" :
+			lienPageSuivante = $('a:contains("Suiv")');
+			break;
+		case "www.manga-lel.com" :
+			//lienPageSuivante = $('img[data-src*="' + image + '"]').next().attr('data-src');
+			let option = $('#page-list > option')[page - 1];
+			let next = $(option).next();
+			if(next && next.length == 1){
+				console.log("next")
+				lienPageSuivante = $('<a href="' + url.substring(0, url.lastIndexOf('/') + 1) + next.attr('value') + '"></a>');
+			} else {
+				let chapter = $('#chapter-list > ul > li > a[href="' + url.substring(0, url.lastIndexOf('/')) + '"]')
+				let prev = $(chapter).parent().prev()
+				if(prev && prev.length == 1){
+					console.log("prev")
+					//console.log("ffffffffffffffffffffffffffffff" + $(chapter).attr('href'))
+					lienPageSuivante = prev.children('a')
+					lienPageSuivante.attr('href', lienPageSuivante.attr('href') + "/1")
+					//console.log($(chapter).parent().next('li'));
+					//let nextChapter = $(chapter).parent().next().children('a');
+				}
+			}
+			
 			break;
     }
 
-    lienPageSuivante = lienPageSuivante ? (lienPageSuivante.attr ? lienPageSuivante.attr('href') : (lienPageSuivante.href ? lienPageSuivante.href : lienPageSuivante)) : null;
 	
-    if(lienPageSuivante && lienPageSuivante.indexOf('http://') < 0){
+	
+	lienPageSuivante = lienPageSuivante ? (lienPageSuivante.attr ? lienPageSuivante.attr('href') : (lienPageSuivante.href ? lienPageSuivante.href : lienPageSuivante)) : null;
+	
+	if(host == "scantrad.fr" && lienPageSuivante.indexOf("page=") < 0){
+		lienPageSuivante += "?page=1";
+	}
+	
+    if(lienPageSuivante && lienPageSuivante.indexOf('http') < 0){
         lienPageSuivante = 'http://' + host + lienPageSuivante
     }
     console.log("Page suivante : " + lienPageSuivante)
@@ -288,6 +386,7 @@ function getImage($, host) {
     switch(host){
         case "lelscans.net" :
 		case "lelscans.com" :
+		case "lelscanv.com" :
 		case "lelscans.co" :
             image = $('div[id="image"] a[href^="http://' + host + '"] img').attr('src');
             break;
@@ -298,9 +397,20 @@ function getImage($, host) {
 		case "m.lirescan.net" :
 			image = $('#image_scan').attr('src');
 			break;
+		case "scantrad.fr" :
+			image = $('#content > div.row.image > a > img').attr('src');
+			break;
+		case "mangapedia.fr" :
+			
+			image = $('table').css('background-image').replace(/^url\(['"]?/,'').replace(/['"]?\)$/,'');
+			break;
+		case "www.manga-lel.com" :
+			//console.log($('html').html())
+			image = $('#ppp > a > img').attr('src');
+			break;
     }
 	if(image){
-		if(image.indexOf('http://') < 0){
+		if(image.indexOf('http') < 0){
 			image = 'http://' + host + image;
 		}
 		console.log("Image src : " + image);
